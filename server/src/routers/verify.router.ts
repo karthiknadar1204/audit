@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { authMiddleware, type AuthEnv } from "../middlewares/auth.middleware";
-import { apiKeyMiddleware } from "../middlewares/api-key.middleware";
+import { type AuthEnv } from "../middlewares/auth.middleware";
+import { verifyAuthMiddleware } from "../middlewares/verify-auth.middleware";
 import { verifyContent } from "../controllers/verify.controller";
 
 const verifySchema = z.object({
@@ -13,6 +13,6 @@ const verifySchema = z.object({
 
 const verifyRouter = new Hono<AuthEnv>();
 
-verifyRouter.post("/verify", authMiddleware, apiKeyMiddleware, zValidator("json", verifySchema), verifyContent);
+verifyRouter.post("/verify", verifyAuthMiddleware, zValidator("json", verifySchema), verifyContent);
 
 export default verifyRouter;
