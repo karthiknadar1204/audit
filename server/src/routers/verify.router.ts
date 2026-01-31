@@ -7,6 +7,7 @@ const verifySchema = z.object({
   question: z.string().min(1),
   answer: z.string().min(1),
   context: z.array(z.string()).optional(),
+  user_id: z.coerce.number().int().positive().optional(),
 });
 
 const verifyRouter = new Hono();

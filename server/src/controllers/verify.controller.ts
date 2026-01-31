@@ -1,11 +1,27 @@
 import { Context } from "hono";
+import { getCookie } from "hono/cookie";
+import { verify as verifyJwt } from "hono/jwt";
 import { OpenAIProvider } from "../providers/openai.provider";
 import { GroundingService } from "../services/grounding.service";
 import { CitationService } from "../services/citation.service";
 import type { GroundingResult, CitationResult } from "../types/verify";
+import { db } from "../models/db";
+import { auditLogTable } from "../models/schema";
 
-type VerifyBody = { question: string; answer: string; context?: string[] };
+type VerifyBody = { question: string; answer: string; context?: string[]; user_id?: number };
 type VerifyInput = { out: { json: VerifyBody } };
+
+async function getUserIdFromContext(c: Context, bodyUserId?: number): Promise<number | null> {
+  if (bodyUserId != null && bodyUserId > 0) return bodyUserId;
+  const token = getCookie(c, "token");
+  if (!token || !process.env.JWT_SECRET) return null;
+  try {
+    const decoded = await verifyJwt(token, process.env.JWT_SECRET, "HS256") as { id?: number };
+    return decoded?.id != null ? decoded.id : null;
+  } catch {
+    return null;
+  }
+}
 
 let llmProvider: OpenAIProvider | null = null;
 let groundingService: GroundingService | null = null;
@@ -44,8 +60,16 @@ function constructRetrySuggestion(
 export const verifyContent = async (
   c: Context<object, "/verify", VerifyInput>
 ) => {
+  const startTime = Date.now();
   try {
-    const { question, answer, context } = c.req.valid("json");
+    const { question, answer, context, user_id: bodyUserId } = c.req.valid("json");
+    const userId = await getUserIdFromContext(c, bodyUserId);
+    if (userId == null) {
+      return c.json(
+        { status: "error", message: "Unauthorized: provide user_id in body or log in with a valid session" },
+        401
+      );
+    }
     const contextStr = context ? context.join("\n\n") : "";
 
     const { groundingService, citationService } = getServices();
@@ -86,6 +110,19 @@ export const verifyContent = async (
           ? constructRetrySuggestion(groundingResult, citationResult)
           : null,
     };
+
+    const durationMs = Date.now() - startTime;
+    db.insert(auditLogTable)
+      .values({
+        userId,
+        durationMs,
+        input_question: question,
+        input_answer: answer,
+        result_action: action as "APPROVE" | "REJECT",
+        result_score: response.trust_score,
+        result_details: response.tests,
+      })
+      .catch((err) => console.error("Failed to log verification:", err));
 
     return c.json(response, 200);
   } catch (error) {

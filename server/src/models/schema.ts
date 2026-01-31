@@ -2,6 +2,14 @@ import { integer, pgTable, pgEnum, serial, text, timestamp, uuid, json, real, in
 
 export const actionEnum = pgEnum('action', ['APPROVE', 'REJECT', 'RETRY']);
 
+export const apiKeysTable = pgTable('api_keys', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => usersTable.id),
+  key: text('key').notNull().unique(),
+  name: text('name'),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const usersTable = pgTable('users_table', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
