@@ -1,6 +1,5 @@
 import { Context } from "hono";
-import { getCookie } from "hono/cookie";
-import { verify as verifyJwt } from "hono/jwt";
+import type { AuthEnv } from "../middlewares/auth.middleware";
 import { OpenAIProvider } from "../providers/openai.provider";
 import { GroundingService } from "../services/grounding.service";
 import { CitationService } from "../services/citation.service";
@@ -8,20 +7,8 @@ import type { GroundingResult, CitationResult } from "../types/verify";
 import { db } from "../models/db";
 import { auditLogTable } from "../models/schema";
 
-type VerifyBody = { question: string; answer: string; context?: string[]; user_id?: number };
+type VerifyBody = { question: string; answer: string; context?: string[] };
 type VerifyInput = { out: { json: VerifyBody } };
-
-async function getUserIdFromContext(c: Context, bodyUserId?: number): Promise<number | null> {
-  if (bodyUserId != null && bodyUserId > 0) return bodyUserId;
-  const token = getCookie(c, "token");
-  if (!token || !process.env.JWT_SECRET) return null;
-  try {
-    const decoded = await verifyJwt(token, process.env.JWT_SECRET, "HS256") as { id?: number };
-    return decoded?.id != null ? decoded.id : null;
-  } catch {
-    return null;
-  }
-}
 
 let llmProvider: OpenAIProvider | null = null;
 let groundingService: GroundingService | null = null;
@@ -58,18 +45,12 @@ function constructRetrySuggestion(
 }
 
 export const verifyContent = async (
-  c: Context<object, "/verify", VerifyInput>
+  c: Context<AuthEnv, "/verify", VerifyInput>
 ) => {
   const startTime = Date.now();
   try {
-    const { question, answer, context, user_id: bodyUserId } = c.req.valid("json");
-    const userId = await getUserIdFromContext(c, bodyUserId);
-    if (userId == null) {
-      return c.json(
-        { status: "error", message: "Unauthorized: provide user_id in body or log in with a valid session" },
-        401
-      );
-    }
+    const userId = c.get("userId");
+    const { question, answer, context } = c.req.valid("json");
     const contextStr = context ? context.join("\n\n") : "";
 
     const { groundingService, citationService } = getServices();

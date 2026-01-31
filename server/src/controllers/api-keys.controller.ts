@@ -1,21 +1,44 @@
 import { Context } from "hono";
+import { randomBytes } from "node:crypto";
+import { eq } from "drizzle-orm";
+import type { AuthEnv } from "../middlewares/auth.middleware";
 import { db } from "../models/db";
 import { apiKeysTable } from "../models/schema";
 
-type CreateKeyBody = { user_id: number; key: string; name?: string };
+type CreateKeyBody = { key?: string; name?: string };
 type CreateKeyInput = { out: { json: CreateKeyBody } };
 
+function generateApiKey(): string {
+  return `ak_${randomBytes(24).toString("hex")}`;
+}
+
+export const listApiKeys = async (c: Context<AuthEnv>) => {
+  try {
+    const userId = c.get("userId");
+    const keys = await db
+      .select()
+      .from(apiKeysTable)
+      .where(eq(apiKeysTable.userId, userId));
+    return c.json(keys, 200);
+  } catch (error) {
+    console.error("List API keys failed:", error);
+    return c.json({ error: "Failed to list API keys" }, 500);
+  }
+};
+
 export const createApiKey = async (
-  c: Context<object, "/", CreateKeyInput>
+  c: Context<AuthEnv, "/", CreateKeyInput>
 ) => {
   try {
-    const { user_id, key, name } = c.req.valid("json");
+    const userId = c.get("userId");
+    const { key: providedKey, name } = c.req.valid("json");
+    const key = providedKey?.trim() ? providedKey.trim() : generateApiKey();
 
     const [created] = await db
       .insert(apiKeysTable)
       .values({
-        userId: user_id,
-        key: key.trim(),
+        userId,
+        key,
         name: name?.trim() || null,
       })
       .returning({
