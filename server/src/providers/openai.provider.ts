@@ -29,14 +29,15 @@ export class OpenAIProvider implements LLMProvider {
         throw new Error("OpenAI returned empty content");
       }
 
+      const promptTokens = completion.usage?.prompt_tokens ?? 0;
+      const completionTokens = completion.usage?.completion_tokens ?? 0;
+      const totalTokens = completion.usage?.total_tokens ?? 0;
+      console.log(promptTokens, completionTokens, totalTokens);
+
       return {
         content,
         usage: completion.usage
-          ? {
-              promptTokens: completion.usage.prompt_tokens ?? 0,
-              completionTokens: completion.usage.completion_tokens ?? 0,
-              totalTokens: completion.usage.total_tokens ?? 0,
-            }
+          ? { promptTokens, completionTokens, totalTokens }
           : undefined,
       };
     } catch (error) {
