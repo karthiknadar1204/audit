@@ -1,41 +1,12 @@
 import { Context } from "hono";
 import { eq, desc } from "drizzle-orm";
+import type { AuthEnv } from "../middlewares/auth.middleware";
 import { db } from "../models/db";
-import { auditLogTable, apiKeysTable } from "../models/schema";
+import { auditLogTable } from "../models/schema";
 
-const API_KEY_HEADERS = ["x-api-key", "kitkat-audit-api-key"] as const;
-
-function getApiKey(c: Context): string | null {
-  for (const name of API_KEY_HEADERS) {
-    const value = c.req.header(name);
-    if (value?.trim()) return value.trim();
-  }
-  const query = c.req.query("api_key");
-  if (query?.trim()) return query.trim();
-  return null;
-}
-
-async function getUserIdFromApiKey(apiKey: string): Promise<number | null> {
-  const [row] = await db
-    .select({ userId: apiKeysTable.userId })
-    .from(apiKeysTable)
-    .where(eq(apiKeysTable.key, apiKey));
-  return row?.userId ?? null;
-}
-
-export const getHistory = async (c: Context) => {
+export const getHistory = async (c: Context<AuthEnv>) => {
   try {
-    const apiKey = getApiKey(c);
-    if (!apiKey) {
-      return c.json(
-        { status: "error", message: "API key required (x-api-key or kitkat-audit-api-key header, or api_key query)" },
-        401
-      );
-    }
-    const userId = await getUserIdFromApiKey(apiKey);
-    if (userId == null) {
-      return c.json({ status: "error", message: "Invalid API key" }, 401);
-    }
+    const userId = c.get("userId");
 
     const logs = await db
       .select({
@@ -71,19 +42,9 @@ export const getHistory = async (c: Context) => {
   }
 };
 
-export const getStats = async (c: Context) => {
+export const getStats = async (c: Context<AuthEnv>) => {
   try {
-    const apiKey = getApiKey(c);
-    if (!apiKey) {
-      return c.json(
-        { status: "error", message: "API key required (x-api-key or kitkat-audit-api-key header, or api_key query)" },
-        401
-      );
-    }
-    const userId = await getUserIdFromApiKey(apiKey);
-    if (userId == null) {
-      return c.json({ status: "error", message: "Invalid API key" }, 401);
-    }
+    const userId = c.get("userId");
 
     const logs = await db
       .select({
