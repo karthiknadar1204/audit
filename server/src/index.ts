@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import authRouter from './routers/auth.router'
 import verifyRouter from './routers/verify.router'
 import apiKeysRouter from './routers/api-keys.router'
+import historyRouter from './routers/history.router'
 
 const app = new Hono()
 
@@ -18,6 +19,7 @@ app.get('/health',(c)=>{
 app.route('/auth', authRouter);
 app.route('/', verifyRouter);
 app.route('/api-keys', apiKeysRouter);
+app.route('/audit', historyRouter);
 
 export default { 
   port: 3004, 

@@ -6,14 +6,17 @@ import type { AuthEnv } from "./auth.middleware";
 import { db } from "../models/db";
 import { apiKeysTable } from "../models/schema";
 
-const API_KEY_HEADER = "x-api-key";
+const API_KEY_HEADERS = ["x-api-key", "kitkat-audit-api-key"] as const;
 
-/**
- * For the verify endpoint only: accept either a valid API key (header) or a valid session (cookie).
- * Sets userId on context from whichever source is valid.
- */
 export const verifyAuthMiddleware = async (c: Context<AuthEnv>, next: Next) => {
-  const apiKey = c.req.header(API_KEY_HEADER)?.trim();
+  let apiKey: string | undefined;
+  for (const name of API_KEY_HEADERS) {
+    const value = c.req.header(name)?.trim();
+    if (value) {
+      apiKey = value;
+      break;
+    }
+  }
   if (apiKey) {
     const [row] = await db
       .select({ userId: apiKeysTable.userId })
@@ -39,7 +42,7 @@ export const verifyAuthMiddleware = async (c: Context<AuthEnv>, next: Next) => {
   }
 
   return c.json(
-    { error: "Unauthorized: provide x-api-key header or log in (session cookie)" },
+    { error: "Unauthorized: provide x-api-key or kitkat-audit-api-key header or log in (session cookie)" },
     401
   );
 };
