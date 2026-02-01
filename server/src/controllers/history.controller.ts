@@ -13,8 +13,10 @@ export const getHistory = async (c: Context<AuthEnv>) => {
         id: auditLogTable.id,
         timestamp: auditLogTable.timestamp,
         input_question: auditLogTable.input_question,
+        input_answer: auditLogTable.input_answer,
         result_action: auditLogTable.result_action,
         result_score: auditLogTable.result_score,
+        result_details: auditLogTable.result_details,
         durationMs: auditLogTable.durationMs,
       })
       .from(auditLogTable)
@@ -28,8 +30,11 @@ export const getHistory = async (c: Context<AuthEnv>) => {
         id: log.id,
         timestamp: log.timestamp,
         question: log.input_question,
+        answer: log.input_answer,
         action: log.result_action,
         trust_score: log.result_score,
+        result_details: log.result_details,
+        duration_ms: log.durationMs,
         latency_ms: log.durationMs,
       })),
     });

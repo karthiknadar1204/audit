@@ -8,6 +8,7 @@ import Sidebar from "../../components/Sidebar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3004";
 
 const SIDEBAR_OPTIONS = [
+  { id: "dashboard", label: "Dashboard" },
   { id: "api-key", label: "Create API key" },
   { id: "api-keys", label: "API keys" },
   { id: "stats", label: "Stats" },
@@ -17,7 +18,7 @@ const SIDEBAR_OPTIONS = [
 
 export default function PlaygroundPage() {
   const router = useRouter();
-  const [activeOption, setActiveOption] = useState("api-key");
+  const [activeOption, setActiveOption] = useState("dashboard");
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
@@ -64,6 +65,9 @@ export default function PlaygroundPage() {
           </Link>
         </header>
         <div className="flex-1 min-h-0 overflow-auto p-6">
+          {activeOption === "dashboard" && (
+            <DashboardView />
+          )}
           {activeOption === "api-key" && (
             <CreateApiKeyView />
           )}
@@ -81,6 +85,123 @@ export default function PlaygroundPage() {
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+function DashboardView() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [runs, setRuns] = useState(null);
+
+  const fetchRuns = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/audit/history`, { credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.message ?? data.error ?? "Failed to load runs");
+        return;
+      }
+      setRuns(data.logs ?? []);
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRuns();
+  }, [fetchRuns]);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-5xl mx-auto">
+        <h1 className="text-xl font-bold mb-4">Runs</h1>
+        <p className="text-gray-500 text-sm">Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold">Runs</h1>
+        <button
+          type="button"
+          onClick={fetchRuns}
+          className="px-4 py-2 bg-[#111] hover:bg-[#222] text-white text-sm font-medium rounded-sm border border-white/10 transition-colors"
+        >
+          Refresh
+        </button>
+      </div>
+      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
+      {runs && runs.length === 0 && (
+        <p className="text-gray-500 text-sm">No runs yet. Verification requests will appear here.</p>
+      )}
+      {runs && runs.length > 0 && (
+        <div className="border border-white/10 rounded-lg overflow-hidden bg-[#0a0a0a]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 bg-[#111] text-left text-gray-400 font-medium">
+                  <th className="px-4 py-3">Question</th>
+                  <th className="px-4 py-3">Answer</th>
+                  <th className="px-4 py-3 w-24">Duration</th>
+                  <th className="px-4 py-3 w-24">Action</th>
+                  <th className="px-4 py-3 w-24">Score</th>
+                  <th className="px-4 py-3 w-32">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runs.map((run) => (
+                  <tr key={run.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="px-4 py-3 text-white max-w-xs truncate" title={run.question ?? ""}>
+                      {run.question ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 max-w-md whitespace-pre-wrap break-words">
+                      {run.answer ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-400">
+                      {run.duration_ms != null ? `${run.duration_ms}ms` : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                          run.action === "APPROVE"
+                            ? "bg-green-500/20 text-green-400"
+                            : run.action === "REJECT"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                        }`}
+                      >
+                        {run.action ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">
+                      {run.trust_score != null ? Number(run.trust_score).toFixed(2) : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {run.result_details ? (
+                        <details className="cursor-pointer">
+                          <summary className="text-gray-500 hover:text-gray-300 text-xs">View</summary>
+                          <pre className="mt-2 p-2 bg-[#050505] border border-white/10 rounded text-xs text-gray-400 overflow-x-auto max-w-md whitespace-pre-wrap">
+                            {JSON.stringify(run.result_details, null, 2)}
+                          </pre>
+                        </details>
+                      ) : (
+                        <span className="text-gray-600">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

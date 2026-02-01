@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Key, KeyRound, BarChart3, History, BookOpen, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Key, KeyRound, BarChart3, History, BookOpen, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const ICONS = {
+  dashboard: LayoutDashboard,
   "api-key": Key,
   "api-keys": KeyRound,
   stats: BarChart3,
