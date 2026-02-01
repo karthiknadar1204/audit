@@ -43,6 +43,12 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/login"
+              className="px-4 py-2 bg-[#111] hover:bg-[#222] text-white text-sm font-bold rounded-sm border border-white/10 transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
               href="https://www.npmjs.com/package/kitkat-audit-sdk"
               target="_blank"
               rel="noopener noreferrer"
