@@ -1,8 +1,11 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Brain, Zap, Lock, Activity, Terminal, Globe, Shield, Layers } from "lucide-react"
 import Link from "next/link"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3004"
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -19,6 +22,15 @@ const staggerContainer = {
 }
 
 export default function LandingPage() {
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    fetch(`${API_URL}/auth/user`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data))
+      .catch(() => {})
+  }, [])
+
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-[#333] selection:text-white overflow-x-hidden font-mono">
       {/* Navigation */}
@@ -30,24 +42,22 @@ export default function LandingPage() {
             </div>
             KitKat Audit
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-            <Link href="#" className="hover:text-white transition-colors">
-              Documentation
-            </Link>
-            <Link href="#" className="hover:text-white transition-colors">
-              API
-            </Link>
-            <Link href="#" className="hover:text-white transition-colors">
-              GitHub
-            </Link>
-          </div>
           <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="px-4 py-2 bg-[#111] hover:bg-[#222] text-white text-sm font-bold rounded-sm border border-white/10 transition-colors"
-            >
-              Sign in
-            </Link>
+            {user ? (
+              <Link
+                href="/playground"
+                className="px-4 py-2 bg-[#111] hover:bg-[#222] text-white text-sm font-bold rounded-sm border border-white/10 transition-colors"
+              >
+                Playground
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-2 bg-[#111] hover:bg-[#222] text-white text-sm font-bold rounded-sm border border-white/10 transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
             <Link
               href="https://www.npmjs.com/package/kitkat-audit-sdk"
               target="_blank"
@@ -315,27 +325,6 @@ if (result.action === "APPROVE") {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-32 px-6 relative overflow-hidden border-t border-white/10">
-        <div className="container mx-auto max-w-4xl relative z-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8">Start verifying your RAG answers.</h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="#"
-              className="w-full sm:w-auto px-8 py-4 bg-white text-black font-bold rounded-sm hover:bg-gray-200 transition-colors"
-            >
-              Get Started
-            </Link>
-            <Link
-              href="#"
-              className="w-full sm:w-auto px-8 py-4 bg-transparent text-white border border-white/20 hover:bg-white/5 rounded-sm transition-colors"
-            >
-              View on GitHub
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-white/10 bg-[#050505] text-sm text-gray-500 font-mono">
         <div className="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-6">
@@ -344,12 +333,6 @@ if (result.action === "APPROVE") {
             <span className="font-bold text-white">KitKat Audit</span>
           </div>
           <div className="flex items-center gap-8">
-            <Link href="#" className="hover:text-white transition-colors">
-              Documentation
-            </Link>
-            <Link href="#" className="hover:text-white transition-colors">
-              GitHub
-            </Link>
             <Link href="#" className="hover:text-white transition-colors">
               Twitter
             </Link>

@@ -12,6 +12,7 @@ const SIDEBAR_OPTIONS = [
   { id: "api-keys", label: "API keys" },
   { id: "stats", label: "Stats" },
   { id: "history", label: "History" },
+  { id: "documentation", label: "Documentation" },
 ];
 
 export default function PlaygroundPage() {
@@ -48,7 +49,7 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#050505] text-white font-mono">
+    <div className="flex h-screen bg-[#050505] text-white font-mono overflow-hidden">
       <Sidebar
         options={SIDEBAR_OPTIONS}
         activeId={activeOption}
@@ -56,19 +57,29 @@ export default function PlaygroundPage() {
         userName={user?.name ?? user?.email}
         onLogout={handleLogout}
       />
-      <main className="flex-1 overflow-auto p-6">
-        {activeOption === "api-key" && (
-          <CreateApiKeyView />
-        )}
-        {activeOption === "api-keys" && (
-          <ApiKeysView />
-        )}
-        {activeOption === "stats" && (
-          <StatsView />
-        )}
-        {activeOption === "history" && (
-          <HistoryView />
-        )}
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <header className="flex justify-end items-center px-6 py-2 border-b border-white/10 shrink-0">
+          <Link href="/" className="text-sm text-gray-400 hover:text-white transition-colors">
+            Landing
+          </Link>
+        </header>
+        <div className="flex-1 min-h-0 overflow-auto p-6">
+          {activeOption === "api-key" && (
+            <CreateApiKeyView />
+          )}
+          {activeOption === "api-keys" && (
+            <ApiKeysView />
+          )}
+          {activeOption === "stats" && (
+            <StatsView />
+          )}
+          {activeOption === "history" && (
+            <HistoryView />
+          )}
+          {activeOption === "documentation" && (
+            <DocumentationView />
+          )}
+        </div>
       </main>
     </div>
   );
@@ -333,6 +344,172 @@ function HistoryView() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function DocumentationView() {
+  return (
+    <div className="max-w-3xl mx-auto space-y-8 pb-12">
+      <h1 className="text-2xl font-bold">KitKat Audit SDK — Documentation</h1>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">Overview</h2>
+        <p className="text-gray-400 text-sm leading-relaxed">
+          The KitKat Audit SDK verifies RAG (retrieval-augmented generation) answers by checking <strong>grounding</strong> (claims supported by context) and <strong>citation</strong> (references to sources). Use it after your LLM generates an answer to get a trust score and an APPROVE/REJECT action.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">Installation</h2>
+        <pre className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-sm text-green-400 overflow-x-auto">
+{`npm install kitkat-audit-sdk`}
+        </pre>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">Authentication</h2>
+        <p className="text-gray-400 text-sm leading-relaxed mb-2">
+          The <code className="px-1 py-0.5 bg-white/10 rounded text-xs">/verify</code> endpoint accepts an <strong className="text-gray-300">API key</strong> in the <code className="px-1 py-0.5 bg-white/10 rounded text-xs">x-api-key</code> or <code className="px-1 py-0.5 bg-white/10 rounded text-xs">kitkat-audit-api-key</code> header. Create keys in the playground (Create API key).
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">Quick start</h2>
+        <pre className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-sm text-gray-300 overflow-x-auto whitespace-pre">
+{`import { VerifyClient } from "kitkat-audit-sdk";
+
+const client = new VerifyClient("https://your-audit-api.com", {
+  apiKey: "ak_your_api_key_here",
+});
+
+const result = await client.verify(
+  "What is the capital of France?",
+  "The capital of France is Paris.",
+  ["Paris is the capital of France."]  // optional context
+);
+
+console.log(result.action);       // "APPROVE" | "REJECT"
+console.log(result.trust_score);  // 0.0 - 1.0
+console.log(result.tests);         // grounding + citation details`}
+        </pre>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">API reference</h2>
+
+        <h3 className="text-base font-medium text-white mt-4 mb-2">VerifyClient</h3>
+        <p className="text-gray-400 text-sm mb-2">
+          Constructor: <code className="px-1 py-0.5 bg-white/10 rounded text-xs">new VerifyClient(baseUrl, options)</code>
+        </p>
+        <ul className="text-gray-400 text-sm space-y-1 mb-4">
+          <li><code className="px-1 py-0.5 bg-white/10 rounded text-xs">baseUrl</code> — Your audit API base URL (e.g. <code className="px-1 py-0.5 bg-white/10 rounded text-xs">https://api.example.com</code>). Trailing slashes are stripped.</li>
+          <li><code className="px-1 py-0.5 bg-white/10 rounded text-xs">options.apiKey</code> — Required. API key sent as <code className="px-1 py-0.5 bg-white/10 rounded text-xs">x-api-key</code>.</li>
+        </ul>
+
+        <h3 className="text-base font-medium text-white mt-4 mb-2">verify(question, answer, context?)</h3>
+        <p className="text-gray-400 text-sm mb-2">
+          Verifies an answer against a question and optional context. Returns a promise that resolves to the verify response or throws on HTTP error.
+        </p>
+        <ul className="text-gray-400 text-sm space-y-1">
+          <li><code className="px-1 py-0.5 bg-white/10 rounded text-xs">question</code> — The user question (string).</li>
+          <li><code className="px-1 py-0.5 bg-white/10 rounded text-xs">answer</code> — The model answer to verify (string).</li>
+          <li><code className="px-1 py-0.5 bg-white/10 rounded text-xs">context</code> — Optional. Array of context strings (e.g. retrieved chunks). Used for grounding and citation checks.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">Verify response</h2>
+        <p className="text-gray-400 text-sm mb-2">The API returns JSON with:</p>
+        <pre className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-sm text-gray-300 overflow-x-auto whitespace-pre">
+{`{
+  "trust_score": 0.85,        // 0–1; combined from grounding (80%) + citation (20%)
+  "action": "APPROVE",        // "APPROVE" if trust_score >= 0.7, else "REJECT"
+  "tests": {
+    "grounding": {
+      "pass": true,
+      "score": 0.9,
+      "reason": "...",
+      "unsupported_claims": []  // claims in answer not supported by context
+    },
+    "citation": {
+      "pass": true,
+      "score": 0.8,
+      "missing_sources": []    // cited IDs not found in context
+    }
+  },
+  "retry_suggestion": null    // string when action is REJECT, else null
+}`}
+        </pre>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">HTTP API (POST /verify)</h2>
+        <p className="text-gray-400 text-sm mb-2">You can call the API directly without the SDK:</p>
+        <pre className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-sm text-gray-300 overflow-x-auto whitespace-pre">
+{`POST /verify
+Headers: Content-Type: application/json
+         x-api-key: ak_...  (or kitkat-audit-api-key)
+
+Body:
+{
+  "question": "Your question",
+  "answer": "Model answer to verify",
+  "context": ["chunk1", "chunk2"]   // optional
+}`}
+        </pre>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">End-to-end RAG + verify</h2>
+        <p className="text-gray-400 text-sm mb-2">Typical flow: embed query → retrieve context → generate answer → verify.</p>
+        <pre className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-sm text-gray-300 overflow-x-auto whitespace-pre">
+{`import { VerifyClient } from "kitkat-audit-sdk";
+// + your embed, vector DB, and LLM clients
+
+const audit = new VerifyClient(process.env.AUDIT_API_URL, {
+  apiKey: process.env.KITKAT_AUDIT_API_KEY,
+});
+
+async function ragWithVerify(query) {
+  // 1. Embed query and retrieve context
+  const embedding = await embed(query);
+  const chunks = await vectorDb.query(embedding, { topK: 5 });
+  const context = chunks.map((c) => c.text);
+
+  // 2. Generate answer with your LLM
+  const answer = await llm.chat([
+    { role: "system", content: "Answer using only the context." },
+    { role: "user", content: \`Context:\\n\${context.join("\\n\\n")}\\n\\nQuestion: \${query}\` },
+  ]);
+
+  // 3. Verify with KitKat Audit
+  const result = await audit.verify(query, answer, context);
+
+  if (result.action === "REJECT") {
+    console.warn("Rejected:", result.retry_suggestion);
+    // Optionally retry with revised prompt or return a safe fallback
+  }
+
+  return { answer, trust_score: result.trust_score, action: result.action };
+}`}
+        </pre>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-2">Error handling</h2>
+        <p className="text-gray-400 text-sm mb-2">
+          On non-2xx responses, the SDK throws an <code className="px-1 py-0.5 bg-white/10 rounded text-xs">Error</code> with the server message (e.g. <code className="px-1 py-0.5 bg-white/10 rounded text-xs">error</code> or <code className="px-1 py-0.5 bg-white/10 rounded text-xs">message</code> from the JSON body), or a generic message like <code className="px-1 py-0.5 bg-white/10 rounded text-xs">Verify failed: 401</code>.
+        </p>
+        <pre className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-sm text-gray-300 overflow-x-auto">
+{`try {
+  const result = await client.verify(question, answer, context);
+  // use result
+} catch (err) {
+  console.error(err.message);  // e.g. "Unauthorized: provide x-api-key..."
+}`}
+        </pre>
+      </section>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Key, KeyRound, BarChart3, History, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Key, KeyRound, BarChart3, History, BookOpen, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const ICONS = {
@@ -9,6 +9,7 @@ const ICONS = {
   "api-keys": KeyRound,
   stats: BarChart3,
   history: History,
+  documentation: BookOpen,
 };
 
 export default function Sidebar({ options, activeId, onSelect, userName, onLogout }) {
