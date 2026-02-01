@@ -12,10 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@audit/verify-sdk": "file:../sdk/audit-verify-sdk-0.1.0.tgz",
     "@pinecone-database/pinecone": "^7.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "kitkat-audit-sdk": "^0.1.1",
     "nodemon": "^3.1.11",
     "openai": "^6.17.0",
     "pinecone": "^0.1.0"
